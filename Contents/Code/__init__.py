@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from PMS import *
-from PMS.Objects import *
-from PMS.Shortcuts import *
 import re
 
 ###################################################################################################
@@ -39,7 +36,7 @@ def Start():
 
 def MainMenu():
   dir = MediaContainer()
-  feeds = XML.ElementFromURL(OVERVIEW_RSS, isHTML=True, errors='ignore').xpath('/html/body//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li')
+  feeds = HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('/html/body//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li')
 
   for f in feeds:
     title = f.xpath('./strong')[0].text.strip()
@@ -69,7 +66,7 @@ def TVShow(sender, url):
 ####################################################################################################
 
 def GetThumb(url):
-  data = HTTP.Request(url, cacheTime=CACHE_1MONTH)
+  data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
   if data:
     return DataObject(data, 'image/jpeg')
   else:
