@@ -29,16 +29,15 @@ def Start():
   MediaContainer.art       = R(ART_DEFAULT)
 
   # Set the default cache time
-  HTTP.SetCacheTime(CACHE_1DAY)
-  HTTP.SetHeader('User-agent', 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.1.7) Gecko/20091221 Firefox/3.5.7')
+  HTTP.CacheTime = CACHE_1DAY
+  HTTP.Headers['User-agent'] = 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.4) Gecko/20100611 Firefox/3.6.4'
 
 ###################################################################################################
 
 def MainMenu():
   dir = MediaContainer()
-  feeds = HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('/html/body//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li')
 
-  for f in feeds:
+  for f in HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('/html/body//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li'):
     title = f.xpath('./strong')[0].text.strip()
     url = f.xpath('./a')[0].get('href')
     dir.Append(Function(DirectoryItem(TVShow, title=title, thumb=R(ICON_DEFAULT)), url=url))
@@ -49,9 +48,8 @@ def MainMenu():
 
 def TVShow(sender, url):
   dir = MediaContainer(title2=sender.itemTitle)
-  episodes = XML.ElementFromURL(url, errors='ignore').xpath('/rss/channel/item')
 
-  for e in episodes:
+  for e in XML.ElementFromURL(url, errors='ignore').xpath('/rss/channel/item'):
     title = e.xpath('./title')[0].text.strip()
     link = e.xpath('./link')[0].text.split('?', 1)[0].rsplit('/', 1)[1]
     video = VIDEO_FILE % link
@@ -66,8 +64,8 @@ def TVShow(sender, url):
 ####################################################################################################
 
 def GetThumb(url):
-  data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
-  if data:
+  try:
+    data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
     return DataObject(data, 'image/jpeg')
-  else:
+  except:
     return Redirect(R(ICON_DEFAULT))
