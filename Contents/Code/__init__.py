@@ -37,7 +37,7 @@ def Start():
 def MainMenu():
   dir = MediaContainer()
 
-  for f in HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('/html/body//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li'):
+  for f in HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li'):
     title = f.xpath('./strong')[0].text.strip()
     url = f.xpath('./a')[0].get('href')
     dir.Append(Function(DirectoryItem(TVShow, title=title, thumb=R(ICON_DEFAULT)), url=url))
