@@ -1,66 +1,72 @@
 # -*- coding: utf-8 -*-
-import re
-
 ###################################################################################################
-
-PLUGIN_TITLE = 'Studio 100'
+NAME		 = 'Studio 100'
 BASE_URL     = 'http://www.studio100tv.be'
 OVERVIEW_RSS = '%s/rss' % BASE_URL
-VIDEO_FILE   = '%s/videofile/%%s' % BASE_URL
-PLAYER       = 'http://www.plexapp.com/player/player.php?clip=%s'
+SEARCH_URL	 = '%s/zoek/%%s' % BASE_URL
 
-ART_DEFAULT  = 'art-default.jpg'
-ICON_DEFAULT = 'icon-default.png'
+ART			 = 'art-default.jpg'
+ICON		 = 'icon-default.png'
+ICON_SEARCH	 = 'search.png'
 
 ###################################################################################################
 def Start():
-  Plugin.AddPrefixHandler('/video/studio100', MainMenu, PLUGIN_TITLE, ICON_DEFAULT, ART_DEFAULT)
-  Plugin.AddViewGroup('List', viewMode='List', mediaType='items')
+	Plugin.AddPrefixHandler('/video/studio100', MainMenu, NAME, ICON, ART)
+	Plugin.AddViewGroup('List', viewMode='List', mediaType='items')
+	Plugin.AddViewGroup('Details', viewMode='InfoList', mediaType='items')
 
-  MediaContainer.title1    = PLUGIN_TITLE
-  MediaContainer.viewGroup = 'List'
-  MediaContainer.userAgent = ''
-  MediaContainer.art       = R(ART_DEFAULT)
-
-  HTTP.CacheTime = CACHE_1DAY
-  HTTP.Headers['User-agent'] = 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.16) Gecko/20110319 Firefox/3.6.16'
+	ObjectContainer.title1 = NAME
+	ObjectContainer.view_group = 'List'
+	ObjectContainer.art = R(ART)
+	
+	VideoClipObject.thumb = R(ICON)
+	
+	HTTP.CacheTime = CACHE_1HOUR
+	HTTP.Headers['User-Agent'] = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:13.0) Gecko/20100101 Firefox/13.0.1'
 
 ###################################################################################################
 def MainMenu():
-  dir = MediaContainer()
+	oc = ObjectContainer()
+	
+	for f in HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li'):
+		title = f.xpath('./strong')[0].text.strip()
+		url = f.xpath('./a')[0].get('href')
+		oc.add(DirectoryObject(key = Callback(Episodes, url=url, title=title), title=title))
+	
+	if len(oc) == 0:
+		oc	= ObjectContainer(header = "Geen Programmas", message = "Er werden geen programmas gevonden")
+	
+	oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.studio100", title='Zoeken', prompt='Zoeken', thumb=R(ICON_SEARCH)))
 
-  for f in HTML.ElementFromURL(OVERVIEW_RSS, errors='ignore').xpath('//h2[text()="Kanalen/Karakters"]/following-sibling::ul/li'):
-    title = f.xpath('./strong')[0].text.strip()
-    url = f.xpath('./a')[0].get('href')
-    dir.Append(Function(DirectoryItem(TVShow, title=title, thumb=R(ICON_DEFAULT)), url=url))
-
-  if len(dir) == 0:
-    return MessageContainer('Geen programma\'s', 'Er werden geen programma\'s gevonden')
-  else:
-    return dir
-
-####################################################################################################
-def TVShow(sender, url):
-  dir = MediaContainer(title2=sender.itemTitle)
-
-  for e in XML.ElementFromURL(url, errors='ignore').xpath('/rss/channel/item'):
-    title = e.xpath('./title')[0].text.strip()
-    link = e.xpath('./link')[0].text.split('?', 1)[0].rsplit('/', 1)[1]
-    video = VIDEO_FILE % link
-    thumb = e.xpath('./enclosure')[0].text
-    pubDate = e.xpath('./pubDate')[0].text
-    date = Datetime.ParseDate(pubDate).strftime('%d/%m/%Y')
-    dir.Append(WebVideoItem(PLAYER % String.Quote(video, usePlus=False), title=title, thumb=Function(GetThumb, url=thumb), infoLabel=date))
-
-  if len(dir) == 0:
-    return MessageContainer('Geen afleveringen', 'Er werden geen afleveringen gevonden')
-  else:
-    return dir
+	
+	return oc
 
 ####################################################################################################
-def GetThumb(url):
-  try:
-    data = HTTP.Request(url, cacheTime=CACHE_1MONTH).content
-    return DataObject(data, 'image/jpeg')
-  except:
-    return Redirect(R(ICON_DEFAULT))
+def Episodes(url, title):
+
+	oc = ObjectContainer(title2=title)
+	
+	for e in XML.ElementFromURL(url, errors='ignore').xpath('/rss/channel/item'):
+		title = e.xpath('./title')[0].text.strip()	
+		link = e.xpath('./link')[0].text.split('?', 1)[0]
+			
+		try:
+			thumb = e.xpath('./enclosure')[0].text
+		except:
+			thumb = None
+		try:
+			pubDate = e.xpath('./pubDate')[0].text
+			date = Datetime.ParseDate(pubDate)
+		except:
+			date = None
+		
+		oc.add(VideoClipObject(
+				url = link,
+				title = title,
+				originally_available_at = date,
+				thumb=Resource.ContentsOfURLWithFallback(url=thumb, fallback=ICON)
+		))
+
+	if len(oc) == 0:
+		oc	= ObjectContainer(header = "Geen Afleveringen", message = "Er werden geen afleveringen gevonden")
+	return oc

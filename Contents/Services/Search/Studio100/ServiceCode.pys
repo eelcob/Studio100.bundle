@@ -1,0 +1,33 @@
+# Search: http://www.studio100tv.be/zoek/plop
+
+BASE_URL     = 'http://www.studio100tv.be'
+SEARCH_URL 	= BASE_URL + "/zoek/%s"
+
+ART = 'art-default.jpg'
+ICON = 'icon-default.png'
+
+####################################################################################################
+def Search(query):
+
+	oc = ObjectContainer(title1="Search", art=R(ART))
+	url = SEARCH_URL % query.replace(" ", "%20")
+		
+	for result in HTML.ElementFromURL(url).xpath('//div[@class="ThumbnailBlok ThumbnailBlokSpec"]/div[@class="Thumbnail"]'):
+		
+		link = BASE_URL + result.xpath('.//a')[0].get('href')
+		title = result.xpath('.//a/img')[0].get('alt')
+		try:
+			thumb = result.xpath('.//a/img')[0].get('lazysrc')
+		except:
+			thumb = None
+		
+		oc.add(VideoClipObject(
+			url = link,
+			title = title,
+			thumb=Resource.ContentsOfURLWithFallback(url=thumb, fallback=ICON)
+		))
+
+	if len(oc) == 0:
+		oc	= ObjectContainer(header = "Geen Afleveringen", message = "Er werden geen afleveringen gevonden")	
+		
+	return oc
