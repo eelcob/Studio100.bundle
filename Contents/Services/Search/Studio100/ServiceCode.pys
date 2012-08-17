@@ -1,5 +1,3 @@
-# Search: http://www.studio100tv.be/zoek/plop
-
 BASE_URL     = 'http://www.studio100tv.be'
 SEARCH_URL 	= BASE_URL + "/zoek/%s"
 
@@ -9,7 +7,7 @@ ICON = 'icon-default.png'
 ####################################################################################################
 def Search(query):
 
-	oc = ObjectContainer(title1="Search", art=R(ART))
+	oc = ObjectContainer(title1="Zoeken", art=R(ART))
 	url = SEARCH_URL % query.replace(" ", "%20")
 		
 	for result in HTML.ElementFromURL(url).xpath('//div[@class="ThumbnailBlok ThumbnailBlokSpec"]/div[@class="Thumbnail"]'):

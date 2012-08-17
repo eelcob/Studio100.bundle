@@ -38,7 +38,6 @@ def MainMenu():
 	
 	oc.add(SearchDirectoryObject(identifier="com.plexapp.plugins.studio100", title='Zoeken', prompt='Zoeken', thumb=R(ICON_SEARCH)))
 
-	
 	return oc
 
 ####################################################################################################
